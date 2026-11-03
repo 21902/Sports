@@ -1,35 +1,146 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>แบบสำรวจลงกีฬา</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แบบสำรวจลงกีฬา</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pri:#ff6b1a; --pri-d:#e85a0c; --pri-l:#fff3eb;
+    --navy:#14213d; --navy-2:#1f3b73;
+    --bg:#f4f6fb; --card:#fff; --muted:#6b7280; --line:#e5e7eb;
+    --ok:#16a34a; --err:#dc2626;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Prompt',sans-serif;background:var(--bg);color:var(--navy)}
+
+  .hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 60%,var(--pri) 150%);
+        color:#fff;padding:48px 20px 100px;text-align:center}
+  .hero .emo{font-size:44px}
+  .hero h1{margin:6px 0;font-size:clamp(26px,5vw,38px)}
+  .hero p{margin:0;opacity:.85}
+
+  .wrap{max-width:860px;margin:-70px auto 20px;padding:0 16px}
+  .card{background:var(--card);border-radius:18px;box-shadow:0 10px 30px rgba(20,33,61,.08);
+        padding:24px;margin-bottom:20px}
+  .step{display:flex;align-items:center;gap:10px;margin:0 0 18px;font-size:18px;font-weight:600}
+  .step span{background:var(--pri);color:#fff;width:30px;height:30px;border-radius:50%;
+             display:grid;place-items:center;font-size:15px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .full{grid-column:1/-1}
+  .lbl{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
+  input[type=text],select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;
+        font:inherit;background:#fff;color:var(--navy);transition:.2s}
+  input:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(255,107,26,.15)}
+
+  .pills{display:flex;gap:10px}
+  .pill{flex:1}
+  .pill input{position:absolute;opacity:0;pointer-events:none}
+  .pill div{padding:12px;text-align:center;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;transition:.2s}
+  .pill input:checked + div{border-color:var(--pri);background:var(--pri-l);color:var(--pri-d);font-weight:600}
+
+  .sports{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px}
+  .sport input{position:absolute;opacity:0;pointer-events:none}
+  .sport .box{position:relative;border:2px solid var(--line);border-radius:16px;padding:18px 12px;
+              text-align:center;cursor:pointer;transition:.2s;height:100%;background:#fff}
+  .sport .box:hover{transform:translateY(-2px);border-color:#ffc9a8}
+  .sport input:checked + .box{border-color:var(--pri);background:var(--pri-l)}
+  .sport input:checked + .box::after{content:'✓';position:absolute;top:8px;right:10px;background:var(--pri);
+        color:#fff;width:24px;height:24px;border-radius:50%;font-size:13px;display:grid;place-items:center}
+  .sport input:disabled + .box{opacity:.45;cursor:not-allowed;transform:none}
+  .ico{font-size:36px;line-height:1}
+  .name{font-weight:600;margin:8px 0 6px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:99px;background:#eef2ff;color:#3730a3}
+  .cap{font-size:12px;color:var(--muted);margin-top:6px}
+  .cap.full{color:var(--err);font-weight:600}
+  .note{font-size:12px;color:var(--muted);margin-top:4px}
+  .empty{color:var(--muted);text-align:center;padding:28px;border:2px dashed var(--line);border-radius:14px}
+
+  .btn{width:100%;padding:15px;border:0;border-radius:14px;background:var(--pri);color:#fff;font:inherit;
+       font-size:17px;font-weight:600;cursor:pointer;transition:.2s;box-shadow:0 6px 16px rgba(255,107,26,.3)}
+  .btn:hover{background:var(--pri-d)}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .count{margin-top:12px;text-align:center;color:var(--muted);font-size:14px}
+
+  #toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,150px);background:var(--navy);color:#fff;
+         padding:14px 22px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);transition:.3s;
+         max-width:90%;z-index:10;text-align:center}
+  #toast.show{transform:translate(-50%,0)}
+  #toast.ok{background:var(--ok)} #toast.err{background:var(--err)}
+
+  footer{text-align:center;padding:6px 0 34px;font-size:13px}
+  footer a{color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:8px}
+  footer a:hover{color:var(--pri);background:#fff}
+
+  @media(max-width:560px){
+    .grid{grid-template-columns:1fr}
+    .sports{grid-template-columns:1fr 1fr}
+    .card{padding:18px}
+  }
+</style>
 </head>
 <body>
-  <h2>แบบสำรวจลงกีฬา</h2>
+
+<header class="hero">
+  <div class="emo">🏆</div>
+  <h1>แบบสำรวจลงกีฬา</h1>
+  <p>เลือกกีฬาที่อยากลงแข่ง เลือกได้มากกว่า 1 ประเภท</p>
+</header>
+
+<main class="wrap">
   <form id="f">
-    <p>เลขประจำตัว: <input name="studentId" required></p>
-    <p>ชื่อ-นามสกุล: <input name="fullName" required></p>
-    <p>ระดับชั้น:
-      <select name="level" required>
-        <option value="">-- เลือก --</option>
-        <option>ม.1</option><option>ม.2</option><option>ม.3</option>
-        <option>ม.4</option><option>ม.5</option><option>ม.6</option>
-      </select>
-      ห้อง: <input name="room" size="3" required>
-    </p>
-    <p>เพศ:
-      <label><input type="radio" name="gender" value="ชาย" required> ชาย</label>
-      <label><input type="radio" name="gender" value="หญิง"> หญิง</label>
-    </p>
-    <h3>เลือกกีฬา</h3>
-    <div id="sports">กำลังโหลด...</div>
-    <p><button type="submit" id="btn">ส่งแบบสำรวจ</button></p>
+    <section class="card">
+      <h2 class="step"><span>1</span> ข้อมูลนักเรียน</h2>
+      <div class="grid">
+        <div>
+          <label class="lbl">เลขประจำตัวนักเรียน</label>
+          <input type="text" name="studentId" inputmode="numeric" placeholder="เช่น 12345" required>
+        </div>
+        <div>
+          <label class="lbl">ชื่อ-นามสกุล</label>
+          <input type="text" name="fullName" placeholder="เช่น สมชาย ใจดี" required>
+        </div>
+        <div>
+          <label class="lbl">ระดับชั้น</label>
+          <select name="level" required>
+            <option value="">-- เลือกระดับชั้น --</option>
+            <option>ม.1</option><option>ม.2</option><option>ม.3</option>
+            <option>ม.4</option><option>ม.5</option><option>ม.6</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">ห้อง</label>
+          <input type="text" name="room" inputmode="numeric" placeholder="เช่น 2" required>
+        </div>
+        <div class="full">
+          <label class="lbl">เพศ</label>
+          <div class="pills">
+            <label class="pill"><input type="radio" name="gender" value="ชาย" required><div>👦 ชาย</div></label>
+            <label class="pill"><input type="radio" name="gender" value="หญิง"><div>👧 หญิง</div></label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="step"><span>2</span> เลือกกีฬา</h2>
+      <div id="sports" class="empty">กำลังโหลดรายการกีฬา...</div>
+    </section>
+
+    <button type="submit" class="btn" id="btn">ส่งแบบสำรวจ</button>
+    <div class="count" id="count">ยังไม่ได้เลือกกีฬา</div>
   </form>
-  <p id="msg"></p>
+</main>
+
+<footer><a href="admin.html">🔒 สำหรับผู้ดูแลระบบ</a></footer>
+<div id="toast"></div>
 
 <script>
-  /* ===== ตั้งค่า: ใส่ URL /exec ของคุณตรงนี้ ===== */
+  /* ===== API ===== */
   const API_URL = 'https://script.google.com/macros/s/AKfycbx7kS0onvPtTHyZCvvAcU0ArQZCjW28jf7kF2hzS0filrRA1yPX5H_pH6gLiHs2v-pMnQ/exec';
 
   async function api(action, ...args) {
@@ -43,56 +154,88 @@
     return j.data;
   }
 
-  /* ===== ส่วนหน้าเว็บ ===== */
+  /* ===== Helpers ===== */
   let SPORTS = [];
   const f = document.getElementById('f');
   const btn = document.getElementById('btn');
+  const box = document.getElementById('sports');
+
+  const ICONS = [['ฟุตซอล','⚽'],['ฟุตบอล','⚽'],['บาส','🏀'],['วอลเลย์','🏐'],['ปิงปอง','🏓'],['เทเบิล','🏓'],
+                 ['แบด','🏸'],['เปตอง','🎯'],['ผลัด','🏃'],['วิ่ง','🏃'],['ว่าย','🏊'],['เทนนิส','🎾'],
+                 ['ตะกร้อ','🏐'],['หมากรุก','♟️'],['ชักเย่อ','💪']];
+  function icon(name) { const m = ICONS.find(x => name.includes(x[0])); return m ? m[1] : '🏅'; }
 
   function esc(t) {
     return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
-  function msg(t, err) {
-    const m = document.getElementById('msg');
-    m.textContent = t; m.style.color = err ? 'red' : 'green';
+
+  let toastTimer;
+  function toast(t, type) {
+    const el = document.getElementById('toast');
+    el.textContent = t; el.className = 'show ' + (type || '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.className = '', 3500);
   }
+
   function getGender() {
     const g = f.querySelector('[name=gender]:checked');
     return g ? g.value : '';
   }
 
+  function updateCount() {
+    const n = f.querySelectorAll('[name=sport]:checked').length;
+    document.getElementById('count').textContent = n ? `เลือกแล้ว ${n} ประเภท` : 'ยังไม่ได้เลือกกีฬา';
+  }
+
+  /* ===== Load & Render ===== */
   async function load() {
     try { SPORTS = await api('getOpenSports'); render(); }
-    catch (e) { msg('โหลดรายการกีฬาไม่สำเร็จ: ' + e.message, true); }
+    catch (e) { box.className = 'empty'; box.textContent = 'โหลดรายการกีฬาไม่สำเร็จ: ' + e.message; }
   }
 
   function render() {
-    const box = document.getElementById('sports');
     const level = f.level.value, gender = getGender();
-    if (!level || !gender) { box.textContent = 'กรุณาเลือกระดับชั้นและเพศก่อน'; return; }
-
+    if (!level || !gender) {
+      box.className = 'empty'; box.textContent = '👆 กรุณาเลือกระดับชั้นและเพศก่อน';
+      updateCount(); return;
+    }
     const list = SPORTS.filter(s => s.levels.includes(level) && s.genders.includes(gender));
-    if (!list.length) { box.textContent = 'ไม่มีกีฬาที่เปิดรับสำหรับชั้น/เพศนี้'; return; }
+    if (!list.length) {
+      box.className = 'empty'; box.textContent = 'ยังไม่มีกีฬาที่เปิดรับสำหรับชั้นและเพศนี้';
+      updateCount(); return;
+    }
 
+    box.className = 'sports';
     box.innerHTML = list.map(s => {
       const used = s.counts[gender] || 0;
       const full = s.capacity > 0 && used >= s.capacity;
-      const cap = s.capacity > 0 ? ` (เหลือ ${Math.max(s.capacity - used, 0)}/${s.capacity})` : '';
-      return `<div>
-        <label><input type="checkbox" name="sport" value="${s.id}" ${full ? 'disabled' : ''}>
-        ${esc(s.name)} [${esc(s.type)}]${cap}${full ? ' - เต็มแล้ว' : ''}</label>
-        ${s.note ? `<br><small>${esc(s.note)}</small>` : ''}
-      </div>`;
+      const capText = s.capacity > 0
+        ? (full ? 'เต็มแล้ว' : `ว่าง ${s.capacity - used}/${s.capacity}`)
+        : 'ไม่จำกัดจำนวน';
+      return `<label class="sport">
+        <input type="checkbox" name="sport" value="${s.id}" ${full ? 'disabled' : ''}>
+        <div class="box">
+          <div class="ico">${icon(s.name)}</div>
+          <div class="name">${esc(s.name)}</div>
+          ${s.type ? `<span class="tag">${esc(s.type)}</span>` : ''}
+          <div class="cap ${full ? 'full' : ''}">${capText}</div>
+          ${s.note ? `<div class="note">${esc(s.note)}</div>` : ''}
+        </div>
+      </label>`;
     }).join('');
+    updateCount();
   }
 
+  /* ===== Events ===== */
   f.addEventListener('change', e => {
     if (e.target.name === 'level' || e.target.name === 'gender') render();
+    if (e.target.name === 'sport') updateCount();
   });
 
   f.addEventListener('submit', async e => {
     e.preventDefault();
     const sportIds = [...f.querySelectorAll('[name=sport]:checked')].map(x => x.value);
-    if (!sportIds.length) return msg('กรุณาเลือกกีฬาอย่างน้อย 1 ประเภท', true);
+    if (!sportIds.length) return toast('กรุณาเลือกกีฬาอย่างน้อย 1 ประเภท', 'err');
 
     const data = {
       studentId: f.studentId.value.trim(),
@@ -102,12 +245,17 @@
       gender: getGender(),
       sportIds
     };
-    btn.disabled = true; msg('กำลังบันทึก...');
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
     try {
       const r = await api('submitRegistration', data);
-      msg(r); f.reset(); load();
-    } catch (err) { msg(err.message, true); }
-    finally { btn.disabled = false; }
+      toast('🎉 ' + r, 'ok');
+      f.reset(); render(); load();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      toast(err.message, 'err');
+    } finally {
+      btn.disabled = false; btn.textContent = 'ส่งแบบสำรวจ';
+    }
   });
 
   load();
