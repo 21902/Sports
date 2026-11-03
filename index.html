@@ -183,8 +183,8 @@
   }
 
   function updateCount() {
-    const n = f.querySelectorAll('[name=sport]:checked').length;
-    document.getElementById('count').textContent = n ? `เลือกแล้ว ${n} ประเภท` : 'ยังไม่ได้เลือกกีฬา';
+    const selected = f.querySelector('[name=sport]:checked');
+    document.getElementById('count').textContent = selected ? 'เลือกกีฬาเรียบร้อย' : 'ยังไม่ได้เลือกกีฬา';
   }
 
   /* ===== Load & Render ===== */
@@ -213,7 +213,7 @@
         ? (full ? 'เต็มแล้ว' : `ว่าง ${s.capacity - used}/${s.capacity}`)
         : 'ไม่จำกัดจำนวน';
       return `<label class="sport">
-        <input type="checkbox" name="sport" value="${s.id}" ${full ? 'disabled' : ''}>
+        <input type="radio" name="sport" value="${s.id}" ${full ? 'disabled' : ''} required>
         <div class="box">
           <div class="ico">${icon(s.name)}</div>
           <div class="name">${esc(s.name)}</div>
@@ -225,7 +225,6 @@
     }).join('');
     updateCount();
   }
-
   /* ===== Events ===== */
   f.addEventListener('change', e => {
     if (e.target.name === 'level' || e.target.name === 'gender') render();
