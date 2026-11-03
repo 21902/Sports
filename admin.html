@@ -1,63 +1,236 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin - ระบบลงกีฬา</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin - ระบบลงกีฬา</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pri:#ff6b1a; --pri-d:#e85a0c; --pri-l:#fff3eb;
+    --navy:#14213d; --navy-2:#1f3b73;
+    --bg:#f4f6fb; --card:#fff; --muted:#6b7280; --line:#e5e7eb;
+    --ok:#16a34a; --ok-l:#dcfce7; --err:#dc2626; --err-l:#fee2e2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Prompt',sans-serif;background:var(--bg);color:var(--navy)}
+  h3{margin:0}
+
+  /* Login */
+  .login{min-height:100vh;display:grid;place-items:center;padding:20px;
+         background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 60%,var(--pri) 150%)}
+  .login-card{width:100%;max-width:380px;text-align:center}
+  .login-card .big{font-size:46px}
+  .login-card h2{margin:8px 0 4px}
+  .login-card input{margin:18px 0 12px;text-align:center}
+  .back{display:inline-block;margin-top:14px;color:var(--muted);text-decoration:none;font-size:14px}
+  .back:hover{color:var(--pri)}
+
+  /* Layout */
+  .top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+  .top-in{max-width:1150px;margin:auto;padding:14px 16px;display:flex;justify-content:space-between;
+          align-items:center;gap:10px;flex-wrap:wrap}
+  .tbtn{color:#fff;background:rgba(255,255,255,.12);border:0;border-radius:10px;padding:8px 14px;
+        font:inherit;font-size:14px;cursor:pointer;text-decoration:none;margin-left:6px}
+  .tbtn:hover{background:rgba(255,255,255,.22)}
+  .wrap{max-width:1150px;margin:auto;padding:20px 16px 40px}
+  .card{background:var(--card);border-radius:18px;box-shadow:0 10px 30px rgba(20,33,61,.08);padding:22px;margin-bottom:20px}
+  .head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .muted{color:var(--muted)}
+
+  /* Stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .stat{background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 6px 18px rgba(20,33,61,.06);
+        border-left:5px solid var(--pri)}
+  .stat small{color:var(--muted);display:block}
+  .stat b{font-size:28px}
+
+  /* Inputs & buttons */
+  input[type=text],input[type=password],input[type=number],input[type=search],select{
+        width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font:inherit;
+        background:#fff;color:var(--navy);transition:.2s}
+  input:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(255,107,26,.15)}
+  .btn{padding:12px 20px;border:0;border-radius:12px;background:var(--pri);color:#fff;font:inherit;
+       font-weight:600;cursor:pointer;transition:.2s}
+  .btn:hover{background:var(--pri-d)}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .btn.full{width:100%}
+  .btn.sm{padding:8px 14px;font-size:14px}
+  .btn.ghost{background:#eef2f7;color:var(--navy)}
+  .btn.ghost:hover{background:#e2e8f0}
+  .btn.danger{background:var(--err-l);color:var(--err)}
+  .btn.danger:hover{background:#fecaca}
+  .link{background:none;border:0;color:var(--pri);font:inherit;font-size:14px;cursor:pointer;text-decoration:underline}
+
+  /* Table */
+  .tbl{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:760px}
+  th{background:#f8fafc;text-align:left;padding:11px 10px;color:var(--muted);font-weight:500;white-space:nowrap}
+  td{padding:11px 10px;border-top:1px solid var(--line);vertical-align:middle}
+  tr:hover td{background:#fafbff}
+  .badge{display:inline-block;padding:4px 12px;border-radius:99px;font-size:13px;border:0;font:inherit;
+         font-size:13px;cursor:pointer}
+  .badge.on{background:var(--ok-l);color:var(--ok)}
+  .badge.off{background:var(--err-l);color:var(--err)}
+  .actions{white-space:nowrap}
+  .actions .btn{margin-right:4px}
+
+  /* Form */
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .fgrid .full{grid-column:1/-1}
+  .lbl{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip input{position:absolute;opacity:0;pointer-events:none}
+  .chip span{display:inline-block;padding:8px 16px;border:1.5px solid var(--line);border-radius:99px;cursor:pointer;transition:.2s}
+  .chip input:checked + span{border-color:var(--pri);background:var(--pri-l);color:var(--pri-d);font-weight:600}
+  .switch{display:flex;align-items:center;gap:10px;cursor:pointer}
+  .switch input{width:20px;height:20px;accent-color:var(--pri)}
+  .form-btns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  #formCard.editing{outline:3px solid var(--pri)}
+
+  /* Tools */
+  .tools{display:flex;gap:8px;flex-wrap:wrap}
+  .tools select,.tools input{width:auto;min-width:160px}
+  #summary{margin:0 0 10px;color:var(--muted)}
+
+  #toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,150px);background:var(--navy);color:#fff;
+         padding:14px 22px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);transition:.3s;
+         max-width:90%;z-index:20;text-align:center}
+  #toast.show{transform:translate(-50%,0)}
+  #toast.ok{background:var(--ok)} #toast.err{background:var(--err)}
+
+  @media(max-width:760px){
+    .stats{grid-template-columns:1fr 1fr}
+    .fgrid{grid-template-columns:1fr}
+    .tools select,.tools input{flex:1}
+  }
+</style>
 </head>
 <body>
-  <h2>Admin - ระบบลงกีฬา</h2>
 
-  <form id="loginBox" onsubmit="event.preventDefault(); login();">
-    รหัสผ่าน: <input type="password" id="pw">
-    <button type="submit">เข้าสู่ระบบ</button>
+<!-- ===== หน้าเข้าสู่ระบบ ===== -->
+<div id="loginView" class="login">
+  <form class="card login-card" id="loginForm">
+    <div class="big">🔐</div>
+    <h2>เข้าสู่ระบบผู้ดูแล</h2>
+    <div class="muted">ระบบแบบสำรวจลงกีฬา</div>
+    <input type="password" id="pw" placeholder="รหัสผ่านแอดมิน" required>
+    <button class="btn full" id="loginBtn">เข้าสู่ระบบ</button>
+    <a href="./" class="back">← กลับหน้าแบบสำรวจ</a>
   </form>
+</div>
 
-  <div id="app" style="display:none">
-    <h3>รายการกีฬา</h3>
-    <table border="1" cellpadding="4">
-      <thead><tr>
-        <th>ชื่อ</th><th>ประเภท</th><th>ระดับชั้น</th><th>เพศ</th>
-        <th>รับสูงสุด/เพศ</th><th>ผู้สมัคร</th><th>สถานะ</th><th>หมายเหตุ</th><th>จัดการ</th>
-      </tr></thead>
-      <tbody id="sportRows"></tbody>
-    </table>
+<!-- ===== หน้าแอดมิน ===== -->
+<div id="app" style="display:none">
+  <header class="top">
+    <div class="top-in">
+      <b>🏆 Admin · ระบบลงกีฬา</b>
+      <div>
+        <a class="tbtn" href="./" target="_blank">ดูหน้าแบบสำรวจ</a>
+        <button class="tbtn" onclick="logout()">ออกจากระบบ</button>
+      </div>
+    </div>
+  </header>
 
-    <h3 id="formTitle">เพิ่มกีฬาใหม่</h3>
-    <form id="sf">
-      <input type="hidden" name="sid">
-      <p>ชื่อกีฬา: <input name="sname" required></p>
-      <p>ประเภท: <input name="stype" list="types" placeholder="เดี่ยว / คู่ / ทีม / ผลัด">
-        <datalist id="types"><option>เดี่ยว</option><option>คู่</option><option>ทีม</option><option>ผลัด</option></datalist>
-      </p>
-      <p>ระดับชั้นที่รับ: <span id="lvBox"></span></p>
-      <p>เพศที่รับ:
-        <label><input type="checkbox" name="g" value="ชาย"> ชาย</label>
-        <label><input type="checkbox" name="g" value="หญิง"> หญิง</label>
-      </p>
-      <p>รับสูงสุดต่อเพศ: <input type="number" name="capacity" min="0" value="0"> (0 = ไม่จำกัด)</p>
-      <p><label><input type="checkbox" name="isOpen" checked> เปิดรับสมัคร</label></p>
-      <p>หมายเหตุ: <input name="note" size="40"></p>
-      <button type="submit">บันทึก</button>
-      <button type="button" onclick="resetForm()">ล้างฟอร์ม / ยกเลิกแก้ไข</button>
-    </form>
+  <main class="wrap">
+    <div class="stats">
+      <div class="stat"><small>กีฬาทั้งหมด</small><b id="stSports">0</b></div>
+      <div class="stat"><small>เปิดรับสมัคร</small><b id="stOpen">0</b></div>
+      <div class="stat"><small>รายการสมัคร</small><b id="stRegs">0</b></div>
+      <div class="stat"><small>นักเรียน (ไม่นับซ้ำ)</small><b id="stStudents">0</b></div>
+    </div>
 
-    <h3>รายชื่อผู้สมัคร</h3>
-    กรองตามกีฬา: <select id="filter" onchange="renderRegs()"><option value="">ทั้งหมด</option></select>
-    <button onclick="reload()">รีเฟรช</button>
-    <p id="summary"></p>
-    <table border="1" cellpadding="4">
-      <thead><tr>
-        <th>เวลา</th><th>เลขประจำตัว</th><th>ชื่อ</th><th>ชั้น</th><th>ห้อง</th><th>เพศ</th><th>กีฬา</th><th></th>
-      </tr></thead>
-      <tbody id="regRows"></tbody>
-    </table>
-  </div>
+    <section class="card">
+      <div class="head">
+        <h3>รายการกีฬา</h3>
+        <button class="btn sm" onclick="newSport()">+ เพิ่มกีฬา</button>
+      </div>
+      <div class="tbl">
+        <table>
+          <thead><tr>
+            <th>กีฬา</th><th>ประเภท</th><th>ระดับชั้น</th><th>เพศ</th>
+            <th>รับสูงสุด/เพศ</th><th>ผู้สมัคร</th><th>สถานะ</th><th>จัดการ</th>
+          </tr></thead>
+          <tbody id="sportRows"><tr><td colspan="8" class="muted">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+      <p class="muted" style="font-size:13px;margin:10px 0 0">กดที่ป้ายสถานะเพื่อเปิดหรือปิดรับสมัครได้ทันที</p>
+    </section>
 
-  <p id="msg"></p>
+    <section class="card" id="formCard">
+      <div class="head"><h3 id="formTitle">เพิ่มกีฬาใหม่</h3></div>
+      <form id="sf">
+        <input type="hidden" name="sid">
+        <div class="fgrid">
+          <div>
+            <label class="lbl">ชื่อกีฬา</label>
+            <input type="text" name="sname" placeholder="เช่น ฟุตซอล" required>
+          </div>
+          <div>
+            <label class="lbl">ประเภท</label>
+            <input type="text" name="stype" list="types" placeholder="เดี่ยว / คู่ / ทีม / ผลัด">
+            <datalist id="types"><option>เดี่ยว</option><option>คู่</option><option>ทีม</option><option>ผลัด</option></datalist>
+          </div>
+          <div class="full">
+            <label class="lbl">ระดับชั้นที่รับ</label>
+            <div class="chips" id="lvBox"></div>
+          </div>
+          <div>
+            <label class="lbl">เพศที่รับ</label>
+            <div class="chips">
+              <label class="chip"><input type="checkbox" name="g" value="ชาย"><span>👦 ชาย</span></label>
+              <label class="chip"><input type="checkbox" name="g" value="หญิง"><span>👧 หญิง</span></label>
+            </div>
+          </div>
+          <div>
+            <label class="lbl">รับสูงสุดต่อเพศ (0 = ไม่จำกัด)</label>
+            <input type="number" name="capacity" min="0" value="0">
+          </div>
+          <div class="full">
+            <label class="lbl">หมายเหตุ (แสดงให้นักเรียนเห็น)</label>
+            <input type="text" name="note" placeholder="เช่น ทีมละ 7 คน / ซ้อมทุกวันพุธ">
+          </div>
+          <div class="full">
+            <label class="switch"><input type="checkbox" name="isOpen" checked> เปิดรับสมัคร</label>
+          </div>
+        </div>
+        <div class="form-btns">
+          <button type="submit" class="btn" id="saveBtn">บันทึก</button>
+          <button type="button" class="btn ghost" onclick="resetForm()">ล้างฟอร์ม / ยกเลิกแก้ไข</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="head">
+        <h3>รายชื่อผู้สมัคร</h3>
+        <div class="tools">
+          <select id="filter" onchange="renderRegs()"><option value="">ทุกกีฬา</option></select>
+          <input type="search" id="q" placeholder="ค้นหาชื่อ / เลขประจำตัว" oninput="renderRegs()">
+          <button class="btn sm ghost" onclick="reload(true)">🔄 รีเฟรช</button>
+          <button class="btn sm" onclick="exportCSV()">⬇ ดาวน์โหลด CSV</button>
+        </div>
+      </div>
+      <p id="summary"></p>
+      <div class="tbl">
+        <table>
+          <thead><tr>
+            <th>เวลา</th><th>เลขประจำตัว</th><th>ชื่อ-นามสกุล</th><th>ชั้น</th>
+            <th>ห้อง</th><th>เพศ</th><th>กีฬา</th><th></th>
+          </tr></thead>
+          <tbody id="regRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast"></div>
 
 <script>
-  /* ===== ตั้งค่า: ใส่ URL /exec ของคุณตรงนี้ (ห้ามใส่รหัสแอดมินในไฟล์นี้) ===== */
+  /* ===== API (ห้ามใส่รหัสแอดมินในไฟล์นี้) ===== */
   const API_URL = 'https://script.google.com/macros/s/AKfycbx7kS0onvPtTHyZCvvAcU0ArQZCjW28jf7kF2hzS0filrRA1yPX5H_pH6gLiHs2v-pMnQ/exec';
 
   async function api(action, ...args) {
@@ -71,75 +244,131 @@
     return j.data;
   }
 
-  /* ===== ส่วนหน้าเว็บ ===== */
-  let PW = '', SPORTS = [], REGS = [];
+  /* ===== State & Helpers ===== */
+  let PW = sessionStorage.getItem('adminPw') || '';
+  let SPORTS = [], REGS = [];
   const LEVELS = ['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'];
-  const sf = document.getElementById('sf');
+  const UPPER = ['ม.4','ม.5','ม.6'];
   const $ = id => document.getElementById(id);
+  const sf = $('sf');
 
-  $('lvBox').innerHTML = LEVELS.map(l =>
-    `<label><input type="checkbox" name="lv" value="${l}"> ${l}</label> `).join('');
+  const ICONS = [['ฟุตซอล','⚽'],['ฟุตบอล','⚽'],['บาส','🏀'],['วอลเลย์','🏐'],['ปิงปอง','🏓'],['เทเบิล','🏓'],
+                 ['แบด','🏸'],['เปตอง','🎯'],['ผลัด','🏃'],['วิ่ง','🏃'],['ว่าย','🏊'],['เทนนิส','🎾'],
+                 ['ตะกร้อ','🏐'],['หมากรุก','♟️'],['ชักเย่อ','💪']];
+  function icon(name) { const m = ICONS.find(x => String(name).includes(x[0])); return m ? m[1] : '🏅'; }
 
   function esc(t) {
     return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
-  function msg(t, err) { $('msg').textContent = t; $('msg').style.color = err ? 'red' : 'green'; }
 
-  // เรียก API พร้อมแนบรหัสผ่านทุกครั้ง
-  function call(fn, ...args) {
-    return api(fn, PW, ...args);
+  let toastTimer;
+  function toast(t, type) {
+    const el = $('toast');
+    el.textContent = t; el.className = 'show ' + (type || '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.className = '', 3500);
   }
 
-  async function login() {
+  function call(fn, ...args) { return api(fn, PW, ...args); }
+
+  $('lvBox').innerHTML = LEVELS.map(l =>
+    `<label class="chip"><input type="checkbox" name="lv" value="${l}"><span>${l}</span></label>`).join('') +
+    `<button type="button" class="link" onclick="pickLevels(UPPER)">เลือก ม.ปลาย</button>
+     <button type="button" class="link" onclick="pickLevels(LEVELS)">เลือกทั้งหมด</button>`;
+
+  function pickLevels(arr) {
+    sf.querySelectorAll('[name=lv]').forEach(c => c.checked = arr.includes(c.value));
+  }
+
+  /* ===== Login ===== */
+  $('loginForm').addEventListener('submit', e => {
+    e.preventDefault();
     PW = $('pw').value;
-    msg('กำลังตรวจสอบ...');
+    tryLogin();
+  });
+
+  async function tryLogin() {
+    const b = $('loginBtn');
+    b.disabled = true; b.textContent = 'กำลังตรวจสอบ...';
     try {
       await call('adminLogin');
-      $('loginBox').style.display = 'none';
-      $('app').style.display = '';
-      msg('');
+      sessionStorage.setItem('adminPw', PW);
+      $('loginView').style.display = 'none';
+      $('app').style.display = 'block';
+      resetForm();
       await reload();
-    } catch (e) { msg(e.message, true); }
+    } catch (e) {
+      sessionStorage.removeItem('adminPw');
+      toast(e.message, 'err');
+    } finally {
+      b.disabled = false; b.textContent = 'เข้าสู่ระบบ';
+    }
   }
 
-  async function reload() {
+  function logout() {
+    sessionStorage.removeItem('adminPw');
+    location.reload();
+  }
+
+  /* ===== Load ===== */
+  async function reload(showMsg) {
     try {
       [SPORTS, REGS] = await Promise.all([call('adminGetSports'), call('adminGetRegistrations')]);
-      renderSports(); renderRegs();
-    } catch (e) { msg(e.message, true); }
+      renderStats(); renderSports(); renderRegs();
+      if (showMsg) toast('อัปเดตข้อมูลแล้ว', 'ok');
+    } catch (e) { toast(e.message, 'err'); }
   }
 
+  function renderStats() {
+    $('stSports').textContent = SPORTS.length;
+    $('stOpen').textContent = SPORTS.filter(s => s.open).length;
+    $('stRegs').textContent = REGS.length;
+    $('stStudents').textContent = new Set(REGS.map(r => r.studentId)).size;
+  }
+
+  /* ===== Sports ===== */
   function renderSports() {
-    $('sportRows').innerHTML = SPORTS.map(s => {
-      const total = Object.values(s.counts).reduce((a, b) => a + b, 0);
-      const detail = s.genders.map(g => `${g} ${s.counts[g] || 0}`).join(', ');
-      return `<tr>
-        <td>${esc(s.name)}</td><td>${esc(s.type)}</td>
-        <td>${esc(s.levels.join(', '))}</td><td>${esc(s.genders.join(', '))}</td>
-        <td>${s.capacity || 'ไม่จำกัด'}</td><td>${total} (${esc(detail)})</td>
-        <td>${s.open ? 'เปิด' : 'ปิด'}</td><td>${esc(s.note)}</td>
-        <td><button onclick="editSport('${s.id}')">แก้ไข</button>
-            <button onclick="delSport('${s.id}')">ลบ</button></td>
-      </tr>`;
-    }).join('');
+    if (!SPORTS.length) {
+      $('sportRows').innerHTML = '<tr><td colspan="8" class="muted">ยังไม่มีกีฬา กด "+ เพิ่มกีฬา" ได้เลย</td></tr>';
+    } else {
+      $('sportRows').innerHTML = SPORTS.map(s => {
+        const total = Object.values(s.counts).reduce((a, b) => a + b, 0);
+        const detail = s.genders.map(g => `${g} ${s.counts[g] || 0}`).join(' · ');
+        return `<tr>
+          <td><b>${icon(s.name)} ${esc(s.name)}</b>${s.note ? `<br><small class="muted">${esc(s.note)}</small>` : ''}</td>
+          <td>${esc(s.type) || '-'}</td>
+          <td>${esc(s.levels.join(', '))}</td>
+          <td>${esc(s.genders.join(', '))}</td>
+          <td>${s.capacity || 'ไม่จำกัด'}</td>
+          <td><b>${total}</b> <small class="muted">(${esc(detail)})</small></td>
+          <td><button class="badge ${s.open ? 'on' : 'off'}" onclick="toggleOpen('${s.id}')">${s.open ? '● เปิด' : '● ปิด'}</button></td>
+          <td class="actions">
+            <button class="btn sm ghost" onclick="editSport('${s.id}')">แก้ไข</button>
+            <button class="btn sm danger" onclick="delSport('${s.id}')">ลบ</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
 
     const cur = $('filter').value;
-    $('filter').innerHTML = '<option value="">ทั้งหมด</option>' +
+    $('filter').innerHTML = '<option value="">ทุกกีฬา</option>' +
       SPORTS.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
     $('filter').value = cur;
   }
 
-  function renderRegs() {
-    const fid = $('filter').value;
-    const list = REGS.map((r, i) => ({ r, i })).filter(x => !fid || x.r.sportId === fid);
-    const male = list.filter(x => x.r.gender === 'ชาย').length;
-    $('summary').textContent = `ทั้งหมด ${list.length} คน (ชาย ${male}, หญิง ${list.length - male})`;
-    $('regRows').innerHTML = list.map(({ r, i }) => `<tr>
-      <td>${esc(r.timestamp)}</td><td>${esc(r.studentId)}</td><td>${esc(r.fullName)}</td>
-      <td>${esc(r.level)}</td><td>${esc(r.room)}</td><td>${esc(r.gender)}</td>
-      <td>${esc(r.sportName)}</td>
-      <td><button onclick="delReg(${i})">ลบ</button></td>
-    </tr>`).join('');
+  async function toggleOpen(id) {
+    const s = SPORTS.find(x => x.id === id);
+    try {
+      await call('adminSaveSport', { ...s, open: !s.open });
+      toast(`${s.open ? 'ปิด' : 'เปิด'}รับสมัคร ${s.name} แล้ว`, 'ok');
+      await reload();
+    } catch (e) { toast(e.message, 'err'); }
+  }
+
+  function newSport() {
+    resetForm();
+    $('formCard').scrollIntoView({ behavior: 'smooth' });
+    sf.sname.focus();
   }
 
   function editSport(id) {
@@ -147,18 +376,24 @@
     sf.sid.value = s.id;
     sf.sname.value = s.name;
     sf.stype.value = s.type;
-    sf.querySelectorAll('[name=lv]').forEach(c => c.checked = s.levels.includes(c.value));
+    pickLevels(s.levels);
     sf.querySelectorAll('[name=g]').forEach(c => c.checked = s.genders.includes(c.value));
     sf.capacity.value = s.capacity;
     sf.isOpen.checked = s.open;
     sf.note.value = s.note;
-    $('formTitle').textContent = 'แก้ไขกีฬา: ' + s.name;
-    sf.scrollIntoView();
+    $('formTitle').textContent = '✏️ แก้ไขกีฬา: ' + s.name;
+    $('formCard').classList.add('editing');
+    $('formCard').scrollIntoView({ behavior: 'smooth' });
   }
 
   function resetForm() {
-    sf.reset(); sf.sid.value = '';
+    sf.reset();
+    sf.sid.value = '';
+    pickLevels(UPPER);                                              // ค่าเริ่มต้น: ม.ปลาย
+    sf.querySelectorAll('[name=g]').forEach(c => c.checked = true); // ค่าเริ่มต้น: ชายและหญิง
+    sf.isOpen.checked = true;
     $('formTitle').textContent = 'เพิ่มกีฬาใหม่';
+    $('formCard').classList.remove('editing');
   }
 
   sf.addEventListener('submit', async e => {
@@ -173,26 +408,66 @@
       open: sf.isOpen.checked,
       note: sf.note.value.trim()
     };
-    msg('กำลังบันทึก...');
+    const b = $('saveBtn');
+    b.disabled = true; b.textContent = 'กำลังบันทึก...';
     try {
       await call('adminSaveSport', data);
-      msg('บันทึกแล้ว'); resetForm(); await reload();
-    } catch (err) { msg(err.message, true); }
+      toast('บันทึกเรียบร้อย', 'ok');
+      resetForm();
+      await reload();
+    } catch (err) { toast(err.message, 'err'); }
+    finally { b.disabled = false; b.textContent = 'บันทึก'; }
   });
 
   async function delSport(id) {
     const s = SPORTS.find(x => x.id === id);
-    if (!confirm('ลบกีฬา "' + s.name + '" ? (รายชื่อผู้สมัครเดิมยังอยู่ในชีต)')) return;
-    try { await call('adminDeleteSport', id); msg('ลบแล้ว'); await reload(); }
-    catch (e) { msg(e.message, true); }
+    if (!confirm(`ลบกีฬา "${s.name}" ?\n(รายชื่อผู้สมัครเดิมยังอยู่ใน Google Sheet)`)) return;
+    try { await call('adminDeleteSport', id); toast('ลบแล้ว', 'ok'); await reload(); }
+    catch (e) { toast(e.message, 'err'); }
+  }
+
+  /* ===== Registrations ===== */
+  function filteredRegs() {
+    const fid = $('filter').value;
+    const q = $('q').value.trim().toLowerCase();
+    return REGS.map((r, i) => ({ r, i })).filter(({ r }) =>
+      (!fid || r.sportId === fid) &&
+      (!q || String(r.fullName).toLowerCase().includes(q) || String(r.studentId).includes(q)));
+  }
+
+  function renderRegs() {
+    const list = filteredRegs();
+    const male = list.filter(x => x.r.gender === 'ชาย').length;
+    $('summary').textContent = `แสดง ${list.length} รายการ (ชาย ${male} · หญิง ${list.length - male})`;
+    $('regRows').innerHTML = list.length ? list.map(({ r, i }) => `<tr>
+      <td><small>${esc(r.timestamp)}</small></td><td>${esc(r.studentId)}</td><td>${esc(r.fullName)}</td>
+      <td>${esc(r.level)}</td><td>${esc(r.room)}</td><td>${esc(r.gender)}</td>
+      <td>${icon(r.sportName)} ${esc(r.sportName)}</td>
+      <td><button class="btn sm danger" onclick="delReg(${i})">ลบ</button></td>
+    </tr>`).join('') : '<tr><td colspan="8" class="muted">ไม่มีข้อมูล</td></tr>';
   }
 
   async function delReg(i) {
     const r = REGS[i];
     if (!confirm(`ลบ ${r.fullName} ออกจาก ${r.sportName} ?`)) return;
-    try { await call('adminDeleteRegistration', r.studentId, r.sportId); msg('ลบแล้ว'); await reload(); }
-    catch (e) { msg(e.message, true); }
+    try { await call('adminDeleteRegistration', r.studentId, r.sportId); toast('ลบแล้ว', 'ok'); await reload(); }
+    catch (e) { toast(e.message, 'err'); }
   }
+
+  function exportCSV() {
+    const rows = [['เวลา','เลขประจำตัว','ชื่อ-นามสกุล','ชั้น','ห้อง','เพศ','กีฬา'],
+      ...filteredRegs().map(({ r }) => [r.timestamp, r.studentId, r.fullName, r.level, r.room, r.gender, r.sportName])];
+    const csv = rows.map(row => row.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }); // \ufeff = ภาษาไทยไม่เพี้ยนใน Excel
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'รายชื่อผู้สมัครกีฬา.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  /* ===== Auto login เมื่อรีเฟรชหน้า ===== */
+  if (PW) tryLogin();
 </script>
 </body>
 </html>
