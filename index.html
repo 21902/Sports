@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>แบบสำรวจลงกีฬา</title>
+</head>
+<body>
+  <h2>แบบสำรวจลงกีฬา</h2>
+  <form id="f">
+    <p>เลขประจำตัว: <input name="studentId" required></p>
+    <p>ชื่อ-นามสกุล: <input name="fullName" required></p>
+    <p>ระดับชั้น:
+      <select name="level" required>
+        <option value="">-- เลือก --</option>
+        <option>ม.1</option><option>ม.2</option><option>ม.3</option>
+        <option>ม.4</option><option>ม.5</option><option>ม.6</option>
+      </select>
+      ห้อง: <input name="room" size="3" required>
+    </p>
+    <p>เพศ:
+      <label><input type="radio" name="gender" value="ชาย" required> ชาย</label>
+      <label><input type="radio" name="gender" value="หญิง"> หญิง</label>
+    </p>
+    <h3>เลือกกีฬา</h3>
+    <div id="sports">กำลังโหลด...</div>
+    <p><button type="submit" id="btn">ส่งแบบสำรวจ</button></p>
+  </form>
+  <p id="msg"></p>
+
+<script>
+  /* ===== ตั้งค่า: ใส่ URL /exec ของคุณตรงนี้ ===== */
+  const API_URL = 'https://script.google.com/macros/s/XXXX/exec';
+
+  async function api(action, ...args) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, args })
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error);
+    return j.data;
+  }
+
+  /* ===== ส่วนหน้าเว็บ ===== */
+  let SPORTS = [];
+  const f = document.getElementById('f');
+  const btn = document.getElementById('btn');
+
+  function esc(t) {
+    return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function msg(t, err) {
+    const m = document.getElementById('msg');
+    m.textContent = t; m.style.color = err ? 'red' : 'green';
+  }
+  function getGender() {
+    const g = f.querySelector('[name=gender]:checked');
+    return g ? g.value : '';
+  }
+
+  async function load() {
+    try { SPORTS = await api('getOpenSports'); render(); }
+    catch (e) { msg('โหลดรายการกีฬาไม่สำเร็จ: ' + e.message, true); }
+  }
+
+  function render() {
+    const box = document.getElementById('sports');
+    const level = f.level.value, gender = getGender();
+    if (!level || !gender) { box.textContent = 'กรุณาเลือกระดับชั้นและเพศก่อน'; return; }
+
+    const list = SPORTS.filter(s => s.levels.includes(level) && s.genders.includes(gender));
+    if (!list.length) { box.textContent = 'ไม่มีกีฬาที่เปิดรับสำหรับชั้น/เพศนี้'; return; }
+
+    box.innerHTML = list.map(s => {
+      const used = s.counts[gender] || 0;
+      const full = s.capacity > 0 && used >= s.capacity;
+      const cap = s.capacity > 0 ? ` (เหลือ ${Math.max(s.capacity - used, 0)}/${s.capacity})` : '';
+      return `<div>
+        <label><input type="checkbox" name="sport" value="${s.id}" ${full ? 'disabled' : ''}>
+        ${esc(s.name)} [${esc(s.type)}]${cap}${full ? ' - เต็มแล้ว' : ''}</label>
+        ${s.note ? `<br><small>${esc(s.note)}</small>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  f.addEventListener('change', e => {
+    if (e.target.name === 'level' || e.target.name === 'gender') render();
+  });
+
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const sportIds = [...f.querySelectorAll('[name=sport]:checked')].map(x => x.value);
+    if (!sportIds.length) return msg('กรุณาเลือกกีฬาอย่างน้อย 1 ประเภท', true);
+
+    const data = {
+      studentId: f.studentId.value.trim(),
+      fullName: f.fullName.value.trim(),
+      level: f.level.value,
+      room: f.room.value.trim(),
+      gender: getGender(),
+      sportIds
+    };
+    btn.disabled = true; msg('กำลังบันทึก...');
+    try {
+      const r = await api('submitRegistration', data);
+      msg(r); f.reset(); load();
+    } catch (err) { msg(err.message, true); }
+    finally { btn.disabled = false; }
+  });
+
+  load();
+</script>
+</body>
+</html>
