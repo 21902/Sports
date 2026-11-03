@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - ระบบลงกีฬา</title>
+</head>
+<body>
+  <h2>Admin - ระบบลงกีฬา</h2>
+
+  <form id="loginBox" onsubmit="event.preventDefault(); login();">
+    รหัสผ่าน: <input type="password" id="pw">
+    <button type="submit">เข้าสู่ระบบ</button>
+  </form>
+
+  <div id="app" style="display:none">
+    <h3>รายการกีฬา</h3>
+    <table border="1" cellpadding="4">
+      <thead><tr>
+        <th>ชื่อ</th><th>ประเภท</th><th>ระดับชั้น</th><th>เพศ</th>
+        <th>รับสูงสุด/เพศ</th><th>ผู้สมัคร</th><th>สถานะ</th><th>หมายเหตุ</th><th>จัดการ</th>
+      </tr></thead>
+      <tbody id="sportRows"></tbody>
+    </table>
+
+    <h3 id="formTitle">เพิ่มกีฬาใหม่</h3>
+    <form id="sf">
+      <input type="hidden" name="sid">
+      <p>ชื่อกีฬา: <input name="sname" required></p>
+      <p>ประเภท: <input name="stype" list="types" placeholder="เดี่ยว / คู่ / ทีม / ผลัด">
+        <datalist id="types"><option>เดี่ยว</option><option>คู่</option><option>ทีม</option><option>ผลัด</option></datalist>
+      </p>
+      <p>ระดับชั้นที่รับ: <span id="lvBox"></span></p>
+      <p>เพศที่รับ:
+        <label><input type="checkbox" name="g" value="ชาย"> ชาย</label>
+        <label><input type="checkbox" name="g" value="หญิง"> หญิง</label>
+      </p>
+      <p>รับสูงสุดต่อเพศ: <input type="number" name="capacity" min="0" value="0"> (0 = ไม่จำกัด)</p>
+      <p><label><input type="checkbox" name="isOpen" checked> เปิดรับสมัคร</label></p>
+      <p>หมายเหตุ: <input name="note" size="40"></p>
+      <button type="submit">บันทึก</button>
+      <button type="button" onclick="resetForm()">ล้างฟอร์ม / ยกเลิกแก้ไข</button>
+    </form>
+
+    <h3>รายชื่อผู้สมัคร</h3>
+    กรองตามกีฬา: <select id="filter" onchange="renderRegs()"><option value="">ทั้งหมด</option></select>
+    <button onclick="reload()">รีเฟรช</button>
+    <p id="summary"></p>
+    <table border="1" cellpadding="4">
+      <thead><tr>
+        <th>เวลา</th><th>เลขประจำตัว</th><th>ชื่อ</th><th>ชั้น</th><th>ห้อง</th><th>เพศ</th><th>กีฬา</th><th></th>
+      </tr></thead>
+      <tbody id="regRows"></tbody>
+    </table>
+  </div>
+
+  <p id="msg"></p>
+
+<script>
+  /* ===== ตั้งค่า: ใส่ URL /exec ของคุณตรงนี้ (ห้ามใส่รหัสแอดมินในไฟล์นี้) ===== */
+  const API_URL = 'https://script.google.com/macros/s/XXXX/exec';
+
+  async function api(action, ...args) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, args })
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error);
+    return j.data;
+  }
+
+  /* ===== ส่วนหน้าเว็บ ===== */
+  let PW = '', SPORTS = [], REGS = [];
+  const LEVELS = ['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'];
+  const sf = document.getElementById('sf');
+  const $ = id => document.getElementById(id);
+
+  $('lvBox').innerHTML = LEVELS.map(l =>
+    `<label><input type="checkbox" name="lv" value="${l}"> ${l}</label> `).join('');
+
+  function esc(t) {
+    return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function msg(t, err) { $('msg').textContent = t; $('msg').style.color = err ? 'red' : 'green'; }
+
+  // เรียก API พร้อมแนบรหัสผ่านทุกครั้ง
+  function call(fn, ...args) {
+    return api(fn, PW, ...args);
+  }
+
+  async function login() {
+    PW = $('pw').value;
+    msg('กำลังตรวจสอบ...');
+    try {
+      await call('adminLogin');
+      $('loginBox').style.display = 'none';
+      $('app').style.display = '';
+      msg('');
+      await reload();
+    } catch (e) { msg(e.message, true); }
+  }
+
+  async function reload() {
+    try {
+      [SPORTS, REGS] = await Promise.all([call('adminGetSports'), call('adminGetRegistrations')]);
+      renderSports(); renderRegs();
+    } catch (e) { msg(e.message, true); }
+  }
+
+  function renderSports() {
+    $('sportRows').innerHTML = SPORTS.map(s => {
+      const total = Object.values(s.counts).reduce((a, b) => a + b, 0);
+      const detail = s.genders.map(g => `${g} ${s.counts[g] || 0}`).join(', ');
+      return `<tr>
+        <td>${esc(s.name)}</td><td>${esc(s.type)}</td>
+        <td>${esc(s.levels.join(', '))}</td><td>${esc(s.genders.join(', '))}</td>
+        <td>${s.capacity || 'ไม่จำกัด'}</td><td>${total} (${esc(detail)})</td>
+        <td>${s.open ? 'เปิด' : 'ปิด'}</td><td>${esc(s.note)}</td>
+        <td><button onclick="editSport('${s.id}')">แก้ไข</button>
+            <button onclick="delSport('${s.id}')">ลบ</button></td>
+      </tr>`;
+    }).join('');
+
+    const cur = $('filter').value;
+    $('filter').innerHTML = '<option value="">ทั้งหมด</option>' +
+      SPORTS.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+    $('filter').value = cur;
+  }
+
+  function renderRegs() {
+    const fid = $('filter').value;
+    const list = REGS.map((r, i) => ({ r, i })).filter(x => !fid || x.r.sportId === fid);
+    const male = list.filter(x => x.r.gender === 'ชาย').length;
+    $('summary').textContent = `ทั้งหมด ${list.length} คน (ชาย ${male}, หญิง ${list.length - male})`;
+    $('regRows').innerHTML = list.map(({ r, i }) => `<tr>
+      <td>${esc(r.timestamp)}</td><td>${esc(r.studentId)}</td><td>${esc(r.fullName)}</td>
+      <td>${esc(r.level)}</td><td>${esc(r.room)}</td><td>${esc(r.gender)}</td>
+      <td>${esc(r.sportName)}</td>
+      <td><button onclick="delReg(${i})">ลบ</button></td>
+    </tr>`).join('');
+  }
+
+  function editSport(id) {
+    const s = SPORTS.find(x => x.id === id);
+    sf.sid.value = s.id;
+    sf.sname.value = s.name;
+    sf.stype.value = s.type;
+    sf.querySelectorAll('[name=lv]').forEach(c => c.checked = s.levels.includes(c.value));
+    sf.querySelectorAll('[name=g]').forEach(c => c.checked = s.genders.includes(c.value));
+    sf.capacity.value = s.capacity;
+    sf.isOpen.checked = s.open;
+    sf.note.value = s.note;
+    $('formTitle').textContent = 'แก้ไขกีฬา: ' + s.name;
+    sf.scrollIntoView();
+  }
+
+  function resetForm() {
+    sf.reset(); sf.sid.value = '';
+    $('formTitle').textContent = 'เพิ่มกีฬาใหม่';
+  }
+
+  sf.addEventListener('submit', async e => {
+    e.preventDefault();
+    const data = {
+      id: sf.sid.value,
+      name: sf.sname.value.trim(),
+      type: sf.stype.value.trim(),
+      levels: [...sf.querySelectorAll('[name=lv]:checked')].map(c => c.value),
+      genders: [...sf.querySelectorAll('[name=g]:checked')].map(c => c.value),
+      capacity: sf.capacity.value,
+      open: sf.isOpen.checked,
+      note: sf.note.value.trim()
+    };
+    msg('กำลังบันทึก...');
+    try {
+      await call('adminSaveSport', data);
+      msg('บันทึกแล้ว'); resetForm(); await reload();
+    } catch (err) { msg(err.message, true); }
+  });
+
+  async function delSport(id) {
+    const s = SPORTS.find(x => x.id === id);
+    if (!confirm('ลบกีฬา "' + s.name + '" ? (รายชื่อผู้สมัครเดิมยังอยู่ในชีต)')) return;
+    try { await call('adminDeleteSport', id); msg('ลบแล้ว'); await reload(); }
+    catch (e) { msg(e.message, true); }
+  }
+
+  async function delReg(i) {
+    const r = REGS[i];
+    if (!confirm(`ลบ ${r.fullName} ออกจาก ${r.sportName} ?`)) return;
+    try { await call('adminDeleteRegistration', r.studentId, r.sportId); msg('ลบแล้ว'); await reload(); }
+    catch (e) { msg(e.message, true); }
+  }
+</script>
+</body>
+</html>
