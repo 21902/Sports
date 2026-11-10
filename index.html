@@ -33,17 +33,18 @@
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .full{grid-column:1/-1}
   .lbl{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
-  input[type=text],select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;
+  input[type=text],input[type=tel],select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;
         font:inherit;background:#fff;color:var(--navy);transition:.2s}
   input:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(255,107,26,.15)}
 
   .pills{display:flex;gap:10px}
-  .pill{flex:1}
+  .pill{flex:1;position:relative}
   .pill input{position:absolute;opacity:0;pointer-events:none}
   .pill div{padding:12px;text-align:center;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;transition:.2s}
   .pill input:checked + div{border-color:var(--pri);background:var(--pri-l);color:var(--pri-d);font-weight:600}
 
   .sports{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px}
+  .sport{position:relative}
   .sport input{position:absolute;opacity:0;pointer-events:none}
   .sport .box{position:relative;border:2px solid var(--line);border-radius:16px;padding:18px 12px;
               text-align:center;cursor:pointer;transition:.2s;height:100%;background:#fff}
@@ -58,11 +59,6 @@
   .cap{font-size:12px;color:var(--muted);margin-top:6px}
   .cap.full{color:var(--err);font-weight:600}
   .note{font-size:12px;color:var(--muted);margin-top:4px}
-  .searchbar{display:flex;gap:8px;margin:0 0 14px}
-  .searchbar input{flex:1}
-  .searchbar button{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:0 14px;cursor:pointer;font:inherit;color:var(--navy)}
-  .searchbar button:hover{border-color:var(--pri);color:var(--pri-d)}
-  .sport[hidden]{display:none}
   .empty{color:var(--muted);text-align:center;padding:28px;border:2px dashed var(--line);border-radius:14px}
 
   .btn{width:100%;padding:15px;border:0;border-radius:14px;background:var(--pri);color:#fff;font:inherit;
@@ -93,7 +89,7 @@
 <header class="hero">
   <div class="emo">🏆</div>
   <h1>แบบสำรวจลงกีฬา</h1>
-  <p>เลือกกีฬาที่อยากลงแข่ง เลือกได้มากกว่า 1 ประเภท</p>
+  <p>เลือกกีฬาที่อยากลงแข่ง (เลือกได้ 1 ประเภท)</p>
 </header>
 
 <main class="wrap">
@@ -122,6 +118,11 @@
           <input type="text" name="room" inputmode="numeric" placeholder="เช่น 2" required>
         </div>
         <div class="full">
+          <label class="lbl">เบอร์โทรศัพท์</label>
+          <input type="tel" name="phone" inputmode="tel" maxlength="10" placeholder="เช่น 0812345678"
+                 pattern="0[0-9]{9}" title="กรอกเบอร์โทร 10 หลัก ขึ้นต้นด้วย 0" required>
+        </div>
+        <div class="full">
           <label class="lbl">เพศ</label>
           <div class="pills">
             <label class="pill"><input type="radio" name="gender" value="ชาย" required><div>👦 ชาย</div></label>
@@ -132,13 +133,8 @@
     </section>
 
     <section class="card">
-      <h2 class="step"><span>2</span> เลือกกีฬา</h2>
-      <div class="searchbar" id="searchbar" style="display:none">
-        <input type="text" id="q" placeholder="🔍 ค้นหากีฬา เช่น ฟุตซอล, บาส, วิ่ง" autocomplete="off">
-        <button type="button" id="reload" title="โหลดรายการกีฬาใหม่">🔄</button>
-      </div>
+      <h2 class="step"><span>2</span> เลือกกีฬา (1 ประเภท)</h2>
       <div id="sports" class="empty">กำลังโหลดรายการกีฬา...</div>
-      <div id="noMatch" class="empty" style="display:none;margin-top:12px">ไม่พบกีฬาที่ค้นหา</div>
     </section>
 
     <button type="submit" class="btn" id="btn">ส่งแบบสำรวจ</button>
@@ -157,7 +153,6 @@
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      cache: 'no-store',
       body: JSON.stringify({ action, args })
     });
     const j = await res.json();
@@ -174,7 +169,7 @@
   const ICONS = [['ฟุตซอล','⚽'],['ฟุตบอล','⚽'],['บาส','🏀'],['วอลเลย์','🏐'],['ปิงปอง','🏓'],['เทเบิล','🏓'],
                  ['แบด','🏸'],['เปตอง','🎯'],['ผลัด','🏃'],['วิ่ง','🏃'],['ว่าย','🏊'],['เทนนิส','🎾'],
                  ['ตะกร้อ','🏐'],['หมากรุก','♟️'],['ชักเย่อ','💪']];
-  function icon(name) { const m = ICONS.find(x => name.includes(x[0])); return m ? m[1] : '🏅'; }
+  function icon(name) { const m = ICONS.find(x => String(name).includes(x[0])); return m ? m[1] : '🏅'; }
 
   function esc(t) {
     return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -185,22 +180,7 @@
     const el = document.getElementById('toast');
     el.textContent = t; el.className = 'show ' + (type || '');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.className = '', 3500);
-  }
-
-  const toArr = v => Array.isArray(v) ? v.map(x => String(x).trim()).filter(Boolean)
-                    : String(v ?? '').split(',').map(x => x.trim()).filter(Boolean);
-
-  function applySearch() {
-    const q = document.getElementById('q').value.trim().toLowerCase();
-    let shown = 0;
-    box.querySelectorAll('label.sport').forEach(el => {
-      const ok = !q || el.dataset.search.includes(q);
-      el.hidden = !ok;
-      if (ok) shown++;
-    });
-    document.getElementById('noMatch').style.display =
-      (box.classList.contains('sports') && q && !shown) ? 'block' : 'none';
+    toastTimer = setTimeout(() => el.className = '', 4000);
   }
 
   function getGender() {
@@ -209,47 +189,40 @@
   }
 
   function updateCount() {
-    const selected = f.querySelector('[name=sport]:checked');
-    document.getElementById('count').textContent = selected ? 'เลือกกีฬาเรียบร้อย' : 'ยังไม่ได้เลือกกีฬา';
+    const sel = f.querySelector('[name=sport]:checked');
+    const s = sel && SPORTS.find(x => x.id === sel.value);
+    document.getElementById('count').textContent = s ? `เลือกแล้ว: ${s.name}` : 'ยังไม่ได้เลือกกีฬา';
   }
+
+  // พิมพ์เบอร์โทรได้เฉพาะตัวเลข
+  f.phone.addEventListener('input', () => { f.phone.value = f.phone.value.replace(/\D/g, ''); });
 
   /* ===== Load & Render ===== */
   async function load() {
-    try {
-      const data = await api('getOpenSports');
-      SPORTS = data.map(s => ({ ...s, levels: toArr(s.levels), genders: toArr(s.genders), counts: s.counts || {} }));
-      render();
-    }
+    try { SPORTS = await api('getOpenSports'); render(); }
     catch (e) { box.className = 'empty'; box.textContent = 'โหลดรายการกีฬาไม่สำเร็จ: ' + e.message; }
   }
 
   function render() {
     const level = f.level.value, gender = getGender();
-    const prev = f.querySelector('[name=sport]:checked');
-    const prevId = prev ? prev.value : null;
-    const bar = document.getElementById('searchbar');
     if (!level || !gender) {
       box.className = 'empty'; box.textContent = '👆 กรุณาเลือกระดับชั้นและเพศก่อน';
-      bar.style.display = 'none'; document.getElementById('noMatch').style.display = 'none';
       updateCount(); return;
     }
     const list = SPORTS.filter(s => s.levels.includes(level) && s.genders.includes(gender));
     if (!list.length) {
       box.className = 'empty'; box.textContent = 'ยังไม่มีกีฬาที่เปิดรับสำหรับชั้นและเพศนี้';
-      bar.style.display = 'none'; document.getElementById('noMatch').style.display = 'none';
       updateCount(); return;
     }
 
     box.className = 'sports';
-    bar.style.display = 'flex';
     box.innerHTML = list.map(s => {
       const used = s.counts[gender] || 0;
       const full = s.capacity > 0 && used >= s.capacity;
       const capText = s.capacity > 0
         ? (full ? 'เต็มแล้ว' : `ว่าง ${s.capacity - used}/${s.capacity}`)
         : 'ไม่จำกัดจำนวน';
-      const hay = esc([s.name, s.type, s.note].join(' ').toLowerCase());
-      return `<label class="sport" data-search="${hay}">
+      return `<label class="sport">
         <input type="radio" name="sport" value="${esc(s.id)}" ${full ? 'disabled' : ''}>
         <div class="box">
           <div class="ico">${icon(s.name)}</div>
@@ -260,33 +233,28 @@
         </div>
       </label>`;
     }).join('');
-    if (prevId) { const r = box.querySelector(`[name=sport][value="${CSS.escape(prevId)}"]`); if (r && !r.disabled) r.checked = true; }
-    applySearch();
     updateCount();
   }
+
   /* ===== Events ===== */
   f.addEventListener('change', e => {
     if (e.target.name === 'level' || e.target.name === 'gender') render();
     if (e.target.name === 'sport') updateCount();
   });
 
-  document.getElementById('q').addEventListener('input', applySearch);
-  document.getElementById('reload').addEventListener('click', async () => { await load(); toast('อัปเดตรายการกีฬาแล้ว', 'ok'); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && !btn.disabled) load(); });
-  setInterval(() => { if (!document.hidden && !btn.disabled) load(); }, 60000);
-
   f.addEventListener('submit', async e => {
     e.preventDefault();
-    const sportIds = [...f.querySelectorAll('[name=sport]:checked')].map(x => x.value);
-    if (!sportIds.length) return toast('กรุณาเลือกกีฬาอย่างน้อย 1 ประเภท', 'err');
+    const sel = f.querySelector('[name=sport]:checked');
+    if (!sel) return toast('กรุณาเลือกกีฬา 1 ประเภท', 'err');
 
     const data = {
       studentId: f.studentId.value.trim(),
       fullName: f.fullName.value.trim(),
       level: f.level.value,
       room: f.room.value.trim(),
+      phone: f.phone.value.trim(),
       gender: getGender(),
-      sportIds
+      sportIds: [sel.value]
     };
     btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
     try {
